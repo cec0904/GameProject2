@@ -5,6 +5,9 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
+#include "MyPlayer.h"
 
 // Sets default values
 ACutMeat::ACutMeat()
@@ -39,14 +42,78 @@ ACutMeat::ACutMeat()
     Cube = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Cube"));
     Cube->SetupAttachment(CapsuleComponent); // CapsuleComponent에 종속
     Cube->SetRelativeLocation(FVector(0.f, 0.f, -50.f)); // 적절한 위치
+
+
+    GuideLineMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GuideLine"));
+    GuideLineMesh->SetupAttachment(Cube);
+    GuideLineMesh->SetVisibility(false); // 기본적으로 숨김
+
+    bIsCutting = false;
+    bIsCutComplete = false;
+    bCanPickup = false;
+    CutProgress = 0.0f;
 }
 
 // Called when the game starts or when spawned
 void ACutMeat::BeginPlay()
 {
     Super::BeginPlay();
-
+    PlayerRef = Cast<AMyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 }
+
+//  시점 변경 시 안내선 표시
+void ACutMeat::StartCutting()
+{
+    if (bIsCutComplete) return;
+
+    UE_LOG(LogTemp, Warning, TEXT("Cutting Mode Activated!"));
+
+    bIsCutting = true;
+    GuideLineMesh->SetVisibility(true);
+}
+
+// 마우스 드래그로 절단 진행
+void ACutMeat::UpdateCutting(FVector2D MousePosition)
+{
+    if (!bIsCutting || bIsCutComplete) return;
+
+    // 마우스 이동량을 CutProgress 값에 반영
+    CutProgress += MousePosition.Y * 0.1f;
+
+    // 절단 완료 체크
+    if (CutProgress >= 100.0f)
+    {
+        bIsCutComplete = true;
+        bIsCutting = false;
+        bCanPickup = true;
+        GuideLineMesh->SetVisibility(false);
+        UE_LOG(LogTemp, Warning, TEXT("Cutting Complete! You can now pick up the meat."));
+    }
+}
+
+//  절단 중지
+void ACutMeat::StopCutting()
+{
+    if (!bIsCutting) return;
+
+    bIsCutting = false;
+    UE_LOG(LogTemp, Warning, TEXT("Cutting Stopped."));
+}
+
+//  잘라진 고기 들기
+void ACutMeat::PickupCutMeat()
+{
+    if (bCanPickup && PlayerRef)
+    {
+        Cube->AttachToComponent(PlayerRef->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("hand_socket"));
+        bCanPickup = false;
+        UE_LOG(LogTemp, Warning, TEXT("Picked up the cut meat!"));
+    }
+}
+
+
+
+
 
 // Called every frame
 void ACutMeat::Tick(float DeltaTime)

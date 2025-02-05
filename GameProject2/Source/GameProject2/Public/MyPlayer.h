@@ -60,6 +60,7 @@ class AMyPlayer : public ACharacter
 public:
 	AMyPlayer();
 
+	void ToggleCutMeatView();
 
 protected:
 
