@@ -66,39 +66,9 @@ AMyPlayer::AMyPlayer()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
-void AMyPlayer::ToggleCutMeatView()
-{
-	TArray<AActor*> OverlappingActors;
-	GetOverlappingActors(OverlappingActors, ACutMeat::StaticClass());
 
-	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 
-	for (AActor* Actor : OverlappingActors)
-	{
-		ACutMeat* CutMeat = Cast<ACutMeat>(Actor);
-		if (CutMeat)
-		{
-			// 현재 시점이 CutMeat 고정 카메라가 아닐 때만 전환
-			if (!bIsUsingFixedCamera)
-			{
-				PlayerController->SetViewTargetWithBlend(CutMeat, 0.5f);
-				PlayerController->bShowMouseCursor = true; // 마우스 커서 활성화
-				PlayerController->SetInputMode(FInputModeGameAndUI()); // UI와 게임 둘 다 입력 가능
 
-				bIsUsingFixedCamera = true;
-			}
-			else
-			{
-				PlayerController->SetViewTargetWithBlend(this, 0.5f);
-				PlayerController->bShowMouseCursor = false; // 마우스 커서 비활성화
-				PlayerController->SetInputMode(FInputModeGameOnly()); // 게임 입력만 가능하게 설정
-
-				bIsUsingFixedCamera = false;
-			}
-			return;
-		}
-	}
-}
 
 void AMyPlayer::BeginPlay()
 {
